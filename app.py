@@ -2,27 +2,7 @@ import streamlit as st
 
 from PIL import Image
 
-import requests
-
-from io import BytesIO
-
-# Define the GitHub repository URL
-
-github_url = "https://raw.githubusercontent.com/your_username/your_repository/master/"
-
-# Define the list of available images
-
-images = ["image1.jpg", "image2.jpg", "image3.jpg"]
-
-# Function to download the image from GitHub
-
-def download_image(url):
-
-    response = requests.get(url)
-
-    img = Image.open(BytesIO(response.content))
-
-    return img
+import io
 
 # Streamlit app
 
@@ -30,35 +10,70 @@ def main():
 
     st.title("Image Compressor")
 
-    # Select image from dropdown
+    # File uploader for image selection
 
-    selected_image = st.selectbox("Select an image:", images)
+    uploaded_file = st.file_uploader("Select an image:", type=["jpg", "jpeg", "png"])
 
-    # Build the GitHub image URL
+    # Process the uploaded image
 
-    image_url = github_url + selected_image
+    if uploaded_file is not None:
 
-    # Download and display the selected image
+        image = Image.open(uploaded_file)
 
-    image = download_image(image_url)
+        st.image(image, caption="Original Image", use_column_width=True)
 
-    st.image(image, caption=selected_image, use_column_width=True)
+        # Image compression options
 
-    # Image compression options
+        quality = st.slider("Select the image quality (0-100):", 0, 100, 80)
 
-    quality = st.slider("Select the image quality (0-100):", 0, 100, 80)
+        # Compress the image
 
-    # Compress the image
+        compressed_image = compress_image(image, quality)
 
-    compressed_image = image.copy()
+        # Display the compressed image
 
-    compressed_image.save("compressed_image.jpg", optimize=True, quality=quality)
+        st.image(compressed_image, caption="Compressed Image", use_column_width=True)
 
-    # Display the compressed image
+        # Button to save the compressed image
 
-    st.image(compressed_image, caption="Compressed Image", use_column_width=True)
+        if st.button("Save Compressed Image"):
+
+            save_image(compressed_image)
+
+# Function to compress the image
+
+def compress_image(image, quality):
+
+    # Create a BytesIO object to store the compressed image data
+
+    compressed_image_stream = io.BytesIO()
+
+    # Save the compressed image to the BytesIO stream
+
+    image.save(compressed_image_stream, format="JPEG", optimize=True, quality=quality)
+
+    # Rewind the stream to the beginning
+
+    compressed_image_stream.seek(0)
+
+    # Open the compressed image from the stream
+
+    compressed_image = Image.open(compressed_image_stream)
+
+    return compressed_image
+
+# Function to save the image
+
+def save_image(image):
+
+    image.save("compressed_image.jpg")
+
+    st.success("Image saved successfully!")
 
 if __name__ == "__main__":
 
     main()
 
+
+
+ 
